@@ -7,10 +7,10 @@ WORKDIR /app
 COPY . .
 
 # Install dependencies
-RUN yarn install
+RUN npm install
 
 # Expose port
 EXPOSE 3000
 
 # Default command
-CMD ["yarn", "dev"]
+CMD ["npm","run","dev"]
