@@ -1,0 +1,66 @@
+services:
+  ### MySQL ###
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    restart: always
+    environment:
+      MYSQL_DATABASE: laravel
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+    volumes:
+      - mysql_data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+
+  ### phpMyAdmin ###
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: phpmyadmin
+    restart: always
+    environment:
+      PMA_HOST: mysql
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "8080:80"
+    depends_on:
+      - mysql
+
+  ### Laravel Backend ###
+  backend:
+    build:
+      context: ./backend
+    container_name: laravel
+    volumes:
+      - ./backend:/var/www
+    ports:
+      - "8000:8000"
+    depends_on:
+      - mysql
+    environment:
+      DB_CONNECTION: mysql
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_DATABASE: laravel
+      DB_USERNAME: user
+      DB_PASSWORD: password
+    working_dir: /var/www
+    command: php artisan serve --host=0.0.0.0 --port=8000
+
+  ### NuxtJS Frontend ###
+  frontend:
+    build:
+      context: ./frontend
+    container_name: nuxt
+    volumes:
+      - ./frontend:/app
+    ports:
+      - "3000:3000"
+    command: yarn dev
+    working_dir: /app
+    depends_on:
+      - backend
+
+volumes:
+  mysql_data:
