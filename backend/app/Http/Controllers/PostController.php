@@ -22,27 +22,31 @@ class PostController extends Controller
     // POST /api/posts
     public function store(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'title' => 'required|string|max:255',
             'content' => 'required|string',
+            'views' => 'nullable|integer|min:0',
+            'start_at' => 'nullable|date',
+            'end_at' => 'nullable|date|after_or_equal:start_at',
         ]);
 
-        return Post::create($request->only('title', 'content'));
+        $post = Post::create($validated);
+        return response()->json($post, 201);
     }
 
     // PUT /api/posts/{id}
     public function update(Request $request, $id)
     {
-        $post = Post::findOrFail($id);
-
-        $request->validate([
-            'title' => 'sometimes|required|string|max:255',
-            'content' => 'sometimes|required|string',
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'content' => 'required|string',
+            'views' => 'nullable|integer|min:0',
+            'start_at' => 'nullable|date',
+            'end_at' => 'nullable|date|after_or_equal:start_at',
         ]);
 
-        $post->update($request->only('title', 'content'));
-
-        return $post;
+        $post->update($validated);
+        return response()->json($post);
     }
 
     // DELETE /api/posts/{id}

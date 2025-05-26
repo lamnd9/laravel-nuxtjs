@@ -31,7 +31,7 @@ const config = useRuntimeConfig()
 const api = config.public.apiBase
 
 const posts = ref<any[]>([])
-const form = ref({ id: null, title: '', content: '' })
+const form = ref({ id: null, title: '', content: '', views: 0, start_at: '', end_at: '' })
 
 const modalTitle = ref('Thêm bài viết')
 const postModalEl = ref()
@@ -50,25 +50,56 @@ async function fetchPosts() {
 }
 
 async function submitPost(payload: any) {
-  if (payload.id) {
-    await $fetch(`${api}/posts/${payload.id}`, { method: 'PUT', body: payload })
-  } else {
-    await $fetch(`${api}/posts`, { method: 'POST', body: payload })
+  try {
+    // Format lại các field ngày giờ
+    const formatted = {
+      ...payload,
+      start_at: formatDateTime(payload.start_at),
+      end_at: formatDateTime(payload.end_at),
+    }
+
+    if (formatted.id) {
+      await $fetch(`${api}/posts/${formatted.id}`, {
+        method: 'PUT',
+        body: formatted,
+      })
+    } else {
+      await $fetch(`${api}/posts`, {
+        method: 'POST',
+        body: formatted,
+      })
+    }
+
+    await fetchPosts()
+    closeModal()
+  } catch (err) {
+    console.error(err)
   }
-  await fetchPosts()
-  closeModal()
 }
 
 function openAddModal() {
   modalTitle.value = 'Thêm bài viết'
-  form.value = { id: null, title: '', content: '' }
+  form.value = { id: null, title: '', content: '', views: 0, start_at: '', end_at: '' }
   postModal.show()
 }
 
 function openEditModal(post: any) {
   modalTitle.value = 'Cập nhật bài viết'
-  form.value = { ...post }
+  form.value = {
+    id: post.id,
+    title: post.title,
+    content: post.content,
+    views: post.views,
+    start_at: formatForInput(post.start_at),
+    end_at: formatForInput(post.end_at),
+  }
   postModal.show()
+}
+
+function formatForInput(datetime: string | null) {
+  if (!datetime) return ''
+  const date = new Date(datetime)
+  return date.toISOString().slice(0, 16) // -> "YYYY-MM-DDTHH:mm"
 }
 
 function closeModal() {
@@ -79,5 +110,11 @@ async function deletePost(id: number) {
 
   await $fetch(`${api}/posts/${id}`, { method: 'DELETE' })
   await fetchPosts()
+}
+
+function formatDateTime(value: string | null) {
+  if (!value) return null
+  const date = new Date(value)
+  return date.toISOString().slice(0, 19).replace('T', ' ') // "YYYY-MM-DD HH:mm:ss"
 }
 </script>
